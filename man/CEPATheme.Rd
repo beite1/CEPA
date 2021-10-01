@@ -2,10 +2,17 @@
 \alias{CEPATheme}
 \title{CEPA Theme}
 \usage{
-CEPATheme()
+CEPATheme(SetColours = NA)
 }
+\arguments{
+
+  \item{SetColours}{Either NA or a vector with the variables that are being coloured.}
+}
+
 \description{
 Creates the CEPA theme for use with ggplot2.
+
+NA is the default for SetColours. This can instead be a vector with the names of the variables. This allows you to consistently use the same colours between different plots.
 
 CEPA theme colours are:
 
@@ -29,10 +36,21 @@ CEPA theme colours are:
 
 #c9cac8 = CEPA clay
 
+
 }
 \examples{
+#Example 1
+
 library(ggplot2)
 ggplot(data = iris, aes(x = Sepal.Width, y = Petal.Length, color = Species)) +
 geom_point() + CEPATheme()
+
+#Example 2
+
+Variables <- c("virginica", "versicolor","setosa")
+
+library(ggplot2)
+ggplot(data = iris, aes(x = Sepal.Width, y = Petal.Length, color = Species)) +
+geom_point() + CEPATheme(SetColours = Variables)
 
 }
