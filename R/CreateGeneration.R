@@ -7,8 +7,8 @@ library(magrittr)
 library(tidyr)
 library(stringr)
 
-CreateGeneration <- function(AssumptionsLog = "extdata/AssumptionsLog.xlsx",
-                             GenerationFile = "extdata/INPUT_DATA_GENERATION - Blank.xlsx",
+CreateGeneration <- function(AssumptionsLog = system.file("extdata", "AssumptionsLog.xlsx", package = "CEPA"),
+                             GenerationFile = system.file("extdata", "INPUT_DATA_GENERATION - Blank.xlsx", package = "CEPA"),
                              Year = "2021"){
 
   #Read in the data
