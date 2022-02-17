@@ -1,8 +1,8 @@
-\name{TimeMapper}
-\alias{TimeMapper}
-\title{TimeMapper}
+\name{CreateGeneration}
+\alias{CreateGeneration}
+\title{CreateGeneration}
 \usage{
-timeMapper(AssumptionsLog = "AssumptionsLog.xlsx"", GenerationFile = "INPUT_DATA_GENERATION - Blank.xlsx", Year = "2021")
+CreateGeneration(AssumptionsLog = "AssumptionsLog.xlsx", GenerationFile = "INPUT_DATA_GENERATION - Blank.xlsx", Year = "2021")
 }
 \arguments{
 

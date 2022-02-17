@@ -47,10 +47,10 @@ CreateGeneration <- function(AssumptionsLog = system.file("extdata", "Assumption
 
   #Load the gen wokrbook
 
-    wb <- loadWorkbook("inst/extdata/INPUT_DATA_GENERATION - Blank.xlsx")
+    wb <- loadWorkbook(GenerationFile)
 
     writeData(wb, sheet = "DATA", x=DATA, startCol = 1, startRow = 1)
 
-    saveWorkbook(wb, "inst/extdata/INPUT_DATA_GENERATION.xlsx", overwrite = TRUE)
+    saveWorkbook(wb, paste0(getwd(),"/INPUT_DATA_GENERATION.xlsx"), overwrite = TRUE)
 
 }
