@@ -9,8 +9,9 @@ BacktestingDemand()
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+  \item{wkdir}{Enter the location for the 'Demand' and 'Generation' files.}
   \item{year}{ Default = 2020. Set the year you want to backtest.
-%%     ~~Describe \code{x} here~~
+  
 }
 }
 \author{
@@ -20,19 +21,14 @@ Mitchell Scott
 The resulting files are xlsx. Unfortunately the model requires xlsm files. You will need to open each of the INPUT_DATA_ZONAL files and resave them as xlsm before loading them into the model
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
-BacktestingDemand()
+## Not Run ##
+library(devtools)
+install_local("~/Documents/CEPA_R/CEPA",force=TRUE)
+library(CEPA)
 
-## You will receive a prompt:
-
-# Please enter the file path that points to the 'Demand' and 'Generation' input files.
-# For example 'C:/Users/mitchell.scott/CEPA/4132_DISER_MarinusLinkRevenueOptions - Documents/WS1_MarketModel/Raw Data'.
-# File path:
+setwd("~/Documents/CEPA_R/Backtesting")
+BacktestingDemand(getwd())
 {
   }
 }

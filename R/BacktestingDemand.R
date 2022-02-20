@@ -1,21 +1,15 @@
 # This is a function for creating entering demand profiles for exogenous wind, 
 # solar and hydro and residual demand into the INPUT_DATA_ZONAL files for backtesting
 
-library(readxl)
 library(dplyr)
 library(openxlsx)
 library(magrittr)
 library(tidyr)
-library(stringr)
 library(data.table)
 library(purrr)
-library(Microsoft365R)
 
-BacktestingDemand <- function(year = 2020, states = c("NSW1", "QLD1", "SA1", "TAS1", "VIC1"),
+BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA1", "TAS1", "VIC1"),
                               HydroExo = TRUE, horizon=100, cutoff=30) {
-  wkdir <- readline("Please enter the file path that points to the 'Demand' and 'Generation' input files. 
-           \nFor example 'C:/Users/mitchell.scott/CEPA/4132_DISER_MarinusLinkRevenueOptions - Documents/WS1_MarketModel/Raw Data'. 
-           \nFile path:")
   
   valid_path <- try(list.dirs(wkdir),silent=T)
   
@@ -27,27 +21,27 @@ BacktestingDemand <- function(year = 2020, states = c("NSW1", "QLD1", "SA1", "TA
   x <- 1:length(states)
   files <- function(state,num) {
     message(paste("Collecting data for",state,"in year",year))
-    Demand <- try(read.csv(paste0(wkdir,"/Demand_",state,"_",year,".csv"))[,-1], silent = T)
-    Generators <- try(read.csv(paste0(wkdir,"/Generators_",state,"_",year,".csv"))[,-1], silent = T)
+    suppressWarnings(Demand <- try(read.csv(paste0(wkdir,"/Demand_",state,"_",year,".csv"))[,-1], silent = T))
+    suppressWarnings(Generators <- try(read.csv(paste0(wkdir,"/Generators_",state,"_",year,".csv"))[,-1], silent = T))
     if ("try-error" %in% class(Demand)) {
       Demand <- read.csv(paste0("https://www.neopoint.com.au/Service/Csv?f=102+Demand%5CDemand+5min+by+Region&from=",
                                 year,"-01-01+00%3A00&period=Yearly&instances=",state,"&section=-1&key=CEPA21F"),
                          col.names = c("DateTime","Demand","Predispatch"))
       Demand$Hour <- rep(1:(nrow(Demand)/12),each=12)
-      Demand <- Demand %>% group_by(Hour) %>% summarise(hourly_demand = mean(Demand))
+      Demand <- Demand %>% dplyr::group_by(Hour) %>% dplyr::summarise(hourly_demand = mean(Demand))
       write.csv(Demand,file=paste0(wkdir,"/Demand_",state,"_",year,".csv"))
     }
     if ("try-error" %in% class(Generators)) {
       message("Need to download data from Neopoints. This may take a few minutes.")
-      df1 <- as.data.frame(fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
+      df1 <- as.data.frame(data.table::fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
                                         year,'-01-01+00%3A00&period=Quarterly&instances=',state,'%3BGenerator&section=-1&key=CEPA21F')))[,-1]
-      df2 <- as.data.frame(fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
+      df2 <- as.data.frame(data.table::fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
                                         year,'-04-01+00%3A00&period=Quarterly&instances=',state,'%3BGenerator&section=-1&key=CEPA21F')))[,-1]
-      df3 <- as.data.frame(fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
+      df3 <- as.data.frame(data.table::fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
                                         year,'-07-01+00%3A00&period=Quarterly&instances=',state,'%3BGenerator&section=-1&key=CEPA21F')))[,-1]
-      df4 <- as.data.frame(fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
+      df4 <- as.data.frame(data.table::fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
                                         year,'-10-01+00%3A00&period=Quarterly&instances=',state,'%3BGenerator&section=-1&key=CEPA21F')))[,-1]
-      Generators <- bind_rows(df1,df2,df3,df4)
+      Generators <- dplyr::bind_rows(df1,df2,df3,df4)
       rm(df1,df2,df3,df4)
       colnames(Generators) <- sapply(strsplit(colnames(Generators),"\\."),getElement,1)
       Generators[is.na(Generators)] <- 0 
@@ -60,7 +54,7 @@ BacktestingDemand <- function(year = 2020, states = c("NSW1", "QLD1", "SA1", "TA
       Generators$Solar = rowSums(Generators[,DUID %in% List$DUID[List$.CO2E_ENERGY_SOURCE == "Solar"]])
       Generators$Wind = rowSums(Generators[,DUID %in% List$DUID[List$.CO2E_ENERGY_SOURCE == "Wind"]])
       Generators$Hour <- rep(1:(nrow(Generators)/12),each=12)
-      Generators <- Generators %>% group_by(Hour) %>% summarise(
+      Generators <- Generators %>% dplyr::group_by(Hour) %>% dplyr::summarise(
         hydro_gen = mean(Hydro),
         solar_gen = mean(Solar),
         wind_gen = mean(Wind)
@@ -68,7 +62,8 @@ BacktestingDemand <- function(year = 2020, states = c("NSW1", "QLD1", "SA1", "TA
       write.csv(Generators,file=paste0(wkdir,"/Generators_",state,"_",year,".csv"))
     }
     message("Updating INPUT DATA ZONAL workbook.")
-    wb <- loadWorkbook(paste0("INPUT_DATA_ZONAL_",num,".xlsx"))
+    GenerationFile = system.file("extdata", paste0("INPUT_DATA_ZONAL_",num,".xlsx"), package = "CEPA")
+    wb <- loadWorkbook(GenerationFile)
     DATA <- readWorkbook(wb,sheet="DataEntry_1",skipEmptyCols = FALSE)
     n = nrow(DATA) - (nrow(Demand)+720) - 1
     DATA$Demand <- c(Demand$hourly_demand[1:720],Demand$hourly_demand,Demand$hourly_demand[(nrow(Demand)-n):nrow(Demand)])
@@ -100,14 +95,12 @@ BacktestingDemand <- function(year = 2020, states = c("NSW1", "QLD1", "SA1", "TA
     writeData(wb,sheet="DEMAND",DEMAND)
     writeData(wb,sheet="OPERATING_RESERVE_UP",ORU)
     writeData(wb,sheet="OPERATING_RESERVE_DOWN",ORD)
-    saveWorkbook(wb,paste0("INPUT_DATA_ZONAL_",num,".xlsx"),overwrite = TRUE)
+    saveWorkbook(wb,paste0(getwd(),"/INPUT_DATA_ZONAL_",num,".xlsx"),overwrite = TRUE)
     message("New INPUT_DATA_ZONAL file has been created and saved. Moving onto the next state.")
   }
-  map2(states,x,~files(.x,.y))
+  purrr::map2(states,x,~files(.x,.y))
   message("INPUT DATA ZONAL files updated but they must be converted to .xlsm before being used in the model.")
 }
-
-BacktestingDemand()
 
 
 
