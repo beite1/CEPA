@@ -13,29 +13,29 @@ CreateGeneration <- function(AssumptionsLog = system.file("extdata", "Assumption
 
   #Read in the data
 
-  SRMC <- read_xlsx(AssumptionsLog, sheet = "SRMC") %>%
-    pivot_longer(cols = starts_with("SRMC"), names_to = "YearLong", values_to = "VARCOST") %>%
-    mutate(year = str_extract(YearLong, pattern = "(\\d+)")) %>% filter(year == Year) %>%
-    select(-YearLong)
+  SRMC <- readxl::read_xlsx(AssumptionsLog, sheet = "SRMC") %>%
+    tidyr::pivot_longer(cols = starts_with("SRMC"), names_to = "YearLong", values_to = "VARCOST") %>%
+    dplyr::mutate(year = str_extract(YearLong, pattern = "(\\d+)")) %>% dplyr::filter(year == Year) %>%
+    dyplr::select(-YearLong)
 
-  EndoCapacity <- read_xlsx(AssumptionsLog, sheet = "EndoCapacity") %>%
-    pivot_longer(cols = starts_with("Cap "), names_to = "YearLong", values_to = "CAPACITY") %>%
-    mutate(year = str_extract(YearLong, pattern = "(\\d+)")) %>% filter(year == Year) %>%
-    select(-YearLong)
+  EndoCapacity <- readxl::read_xlsx(AssumptionsLog, sheet = "EndoCapacity") %>%
+    tidyr::pivot_longer(cols = starts_with("Cap "), names_to = "YearLong", values_to = "CAPACITY") %>%
+    dplyr::mutate(year = str_extract(YearLong, pattern = "(\\d+)")) %>% dplyr::filter(year == Year) %>%
+    dplyr::select(-YearLong)
 
-    GenerationSpecs <- read_xlsx(AssumptionsLog, sheet = "GenerationSpecs")
+    GenerationSpecs <- readxl::read_xlsx(AssumptionsLog, sheet = "GenerationSpecs")
 
   #Create a combined DATA
 
-    DATA <- left_join(GenerationSpecs, EndoCapacity, by = c('STATION','DUID','REGION','REGION_KEY')) %>%
-      left_join(SRMC, by = c('STATION','DUID','REGION','REGION_KEY','year'))
+    DATA <- dplyr::left_join(GenerationSpecs, EndoCapacity, by = c('STATION','DUID','REGION','REGION_KEY')) %>%
+      dplyr::left_join(SRMC, by = c('STATION','DUID','REGION','REGION_KEY','year'))
 
   #Filter for available date
   #Select relevant columns for DATA to construct the Generation input sheet
 
-    DATA <- filter(DATA, AvaliableDate <= Year & ExpectedRetirementYear >= Year)
+    DATA <- dplyr::filter(DATA, AvaliableDate <= Year & ExpectedRetirementYear >= Year)
 
-    DATA <- select(DATA, STATION, DUID, REGION, REGION_KEY, CAPACITY, `CARBON INTENSITY`,
+    DATA <- dplyr::select(DATA, STATION, DUID, REGION, REGION_KEY, CAPACITY, `CARBON INTENSITY`,
                    EFFICIENCY_LOSS, GEN_TECH_TEXT, GEN_TECH, GEN_TYPE, HYDRO_UNITS_KEY,
                    INITIAL_ENERGY_STOCK_IN_DAMS, HYDRO_DAM_CAPACITY, HYDRO_DISCHARGE_CAPACITY,
                    COST_WATER_SPILL, FUEL_TYPE_TEXT, FUEL_TYPE, HEATRATE_GJ, HEATRATE,

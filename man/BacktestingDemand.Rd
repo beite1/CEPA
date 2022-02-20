@@ -24,7 +24,7 @@ The resulting files are xlsx. Unfortunately the model requires xlsm files. You w
 \examples{
 ## Not Run ##
 library(devtools)
-install_local("~/Documents/CEPA_R/CEPA",force=TRUE)
+install_github("beite1/CEPA")
 library(CEPA)
 
 setwd("~/Documents/CEPA_R/Backtesting")
