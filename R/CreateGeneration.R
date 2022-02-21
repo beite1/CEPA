@@ -15,12 +15,12 @@ CreateGeneration <- function(AssumptionsLog = system.file("extdata", "Assumption
 
   SRMC <- readxl::read_xlsx(AssumptionsLog, sheet = "SRMC") %>%
     tidyr::pivot_longer(cols = starts_with("SRMC"), names_to = "YearLong", values_to = "VARCOST") %>%
-    dplyr::mutate(year = str_extract(YearLong, pattern = "(\\d+)")) %>% dplyr::filter(year == Year) %>%
+    dplyr::mutate(year = stringr::str_extract(YearLong, pattern = "(\\d+)")) %>% dplyr::filter(year == Year) %>%
     dplyr::select(-YearLong)
 
   EndoCapacity <- readxl::read_xlsx(AssumptionsLog, sheet = "EndoCapacity") %>%
     tidyr::pivot_longer(cols = starts_with("Cap "), names_to = "YearLong", values_to = "CAPACITY") %>%
-    dplyr::mutate(year = str_extract(YearLong, pattern = "(\\d+)")) %>% dplyr::filter(year == Year) %>%
+    dplyr::mutate(year = stringr::str_extract(YearLong, pattern = "(\\d+)")) %>% dplyr::filter(year == Year) %>%
     dplyr::select(-YearLong)
 
     GenerationSpecs <- readxl::read_xlsx(AssumptionsLog, sheet = "GenerationSpecs")
