@@ -9,7 +9,7 @@ library(stringr)
 
 CreateGeneration <- function(AssumptionsLog = system.file("extdata", "AssumptionsLog.xlsx", package = "CEPA"),
                              GenerationFile = system.file("extdata", "INPUT_DATA_GENERATION - Blank.xlsx", package = "CEPA"),
-                             Year = "2021"){
+                             Year = "2021", wkdir = getwd()){
 
   #Read in the data
 
@@ -51,6 +51,6 @@ CreateGeneration <- function(AssumptionsLog = system.file("extdata", "Assumption
 
     writeData(wb, sheet = "DATA", x=DATA, startCol = 1, startRow = 1)
 
-    saveWorkbook(wb, paste0(getwd(),"/INPUT_DATA_GENERATION.xlsx"), overwrite = TRUE)
+    saveWorkbook(wb, paste0(wkdir,"/INPUT_DATA_GENERATION.xlsx"), overwrite = TRUE)
 
 }

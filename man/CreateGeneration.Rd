@@ -12,6 +12,8 @@ CreateGeneration(AssumptionsLog = "AssumptionsLog.xlsx", GenerationFile = "INPUT
 
   \item{Year}{The year you want to create a generation file for.}
 
+  \item{wkdir}{The working directory where you would like to save the INPUT_DATA_GENERATION file.}
+
 }
 
 \description{
@@ -21,6 +23,8 @@ This function creates a generation file to be used with the AIMMS solver. The in
 }
 \examples{
 
-CreateGeneration()
+  setwd("~/DATA IN/GENERATION INPUT")
+
+CreateGeneration(wkdir = getwd())
 
 }
