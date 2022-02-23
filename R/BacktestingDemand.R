@@ -60,6 +60,7 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
         select(date_time,station,.CO2E_ENERGY_SOURCE,output) %>% rename("Tech"=".CO2E_ENERGY_SOURCE") %>%
         ungroup() %>% group_by(date_time,Tech) %>% summarise(output = round(sum(output),3),.groups="keep") %>%
         tidyr::spread(Tech,output)
+      Generators$REGION <- stringr::str_remove(state,"1")
       write.csv(Generators,file=paste0(wkdir,"/Generators_",state,"_",year,".csv"))
     }
     message("Updating INPUT DATA ZONAL workbook.")
