@@ -14,13 +14,13 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
   days = 365
   if (year%%4 == 0) {days = 366}
 
-  valid_path <- try(list.dirs(wkdir),silent=T)
+  suppressWarnings(valid_path <- try(list.dirs(wkdir),silent=T))
   
   if ("try-error" %in% class(valid_path)) {
     stop("The file path entered is not valid.")
   }
   
-  List <- try(read.csv(paste0(wkdir,"/Metadata_",year,".csv")))
+  suppressWarnings(List <- try(read.csv(paste0(wkdir,"/Metadata_",year,".csv"))))
   if ("try-error" %in% class(List)) {
     List <- as.data.frame(read.csv(paste0('https://www.neopoint.com.au/Service/Csv?f=107+Information%5CGenerators&from=',
                                             year,'-01-01+00%3A00&period=Yearly&instances=&section=-1&key=CEPA21F')))
