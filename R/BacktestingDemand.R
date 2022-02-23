@@ -36,7 +36,7 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
       Demand <- read.csv(paste0("https://www.neopoint.com.au/Service/Csv?f=102+Demand%5CDemand+5min+by+Region&from=",
                                 year,"-01-01+00%3A00&period=Yearly&instances=",state,"&section=-1&key=CEPA21F"),
                          col.names = c("DateTime","Demand","Predispatch"))
-      Demand$date_time <- seq(lubridate::ymd_h(paste0(year,"-1-1 0")), by = "hour", length.out = days*24)
+      Demand$date_time <- rep(seq(lubridate::ymd_h(paste0(year,"-1-1 0")), by = "hour", length.out = days*24),each=12)
       Demand <- Demand %>% group_by(date_time) %>% summarise(hourly_demand = mean(Demand))
       write.csv(Demand,file=paste0(wkdir,"/Demand_",state,"_",year,".csv"))
     }
@@ -54,7 +54,7 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
       rm(df1,df2,df3,df4)
       colnames(Generators) <- sapply(strsplit(colnames(Generators),"\\."),getElement,1)
       Generators[is.na(Generators)] <- 0
-      Generators$date_time <- seq(lubridate::ymd_h(paste0(year,"-1-1 0")), by = "hour", length.out = days*24)
+      Generators$date_time <- rep(seq(lubridate::ymd_h(paste0(year,"-1-1 0")), by = "hour", length.out = days*24),each=12)
       Generators <- Generators %>% group_by(date_time) %>% summarise(across(tidyr::everything(),mean)) %>%
         tidyr::pivot_longer(!date_time, names_to = "station", values_to = "output") %>% left_join(List, by=c("station"="DUID")) %>%
         select(date_time,station,.CO2E_ENERGY_SOURCE,output) %>% rename("Tech"=".CO2E_ENERGY_SOURCE") %>%
