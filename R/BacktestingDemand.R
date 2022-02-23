@@ -67,6 +67,9 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
     wb <- loadWorkbook(GenerationFile)
     DATA <- readWorkbook(wb,sheet="DataEntry_1",skipEmptyCols = FALSE)
     n = nrow(DATA) - (nrow(Demand)+720) - 1
+    if (is.null(Generators$Wind)) Generators$Wind = 0
+    if (is.null(Generators$Solar)) Generators$Solar = 0
+    if (is.null(Generators$Hydro)) Generators$Hydro = 0
     DATA$Demand <- c(Demand$hourly_demand[1:720],Demand$hourly_demand,Demand$hourly_demand[(nrow(Demand)-n):nrow(Demand)])
     DATA$Wind <- c(Generators$Wind[1:720],Generators$Wind,Generators$Wind[(nrow(Generators)-n):nrow(Generators)])
     DATA$Solar <- c(Generators$Solar[1:720],Generators$Solar,Generators$Solar[(nrow(Generators)-n):nrow(Generators)])
