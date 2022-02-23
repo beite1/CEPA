@@ -11,13 +11,22 @@ library(purrr)
 BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA1", "TAS1", "VIC1"),
                               HydroExo = TRUE, horizon=100, cutoff=30) {
   
+  days = 365
+  if (year%%4 == 0) {days = 366}
+
   valid_path <- try(list.dirs(wkdir),silent=T)
   
   if ("try-error" %in% class(valid_path)) {
     stop("The file path entered is not valid.")
   }
   
-  
+  List <- try(read.csv(paste0(wkdir,"/Metadata_",year,".csv")))
+  if ("try-error" %in% class(List)) {
+    List <- as.data.frame(read.csv(paste0('https://www.neopoint.com.au/Service/Csv?f=107+Information%5CGenerators&from=',
+                                            year,'-01-01+00%3A00&period=Yearly&instances=&section=-1&key=CEPA21F')))
+    colnames(List)[1] <- "DUID"
+    write.csv(List,paste0(wkdir,"/Metadata_",year,".csv"))
+  }
   x <- 1:length(states)
   files <- function(state,num) {
     message(paste("Collecting data for",state,"in year",year))
@@ -27,8 +36,8 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
       Demand <- read.csv(paste0("https://www.neopoint.com.au/Service/Csv?f=102+Demand%5CDemand+5min+by+Region&from=",
                                 year,"-01-01+00%3A00&period=Yearly&instances=",state,"&section=-1&key=CEPA21F"),
                          col.names = c("DateTime","Demand","Predispatch"))
-      Demand$Hour <- rep(1:(nrow(Demand)/12),each=12)
-      Demand <- Demand %>% dplyr::group_by(Hour) %>% dplyr::summarise(hourly_demand = mean(Demand))
+      Demand$date_time <- seq(lubridate::ymd_h(paste0(year,"-1-1 0")), by = "hour", length.out = days*24)
+      Demand <- Demand %>% group_by(date_time) %>% summarise(hourly_demand = mean(Demand))
       write.csv(Demand,file=paste0(wkdir,"/Demand_",state,"_",year,".csv"))
     }
     if ("try-error" %in% class(Generators)) {
@@ -41,24 +50,16 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
                                         year,'-07-01+00%3A00&period=Quarterly&instances=',state,'%3BGenerator&section=-1&key=CEPA21F')))[,-1]
       df4 <- as.data.frame(data.table::fread(paste0('https://www.neopoint.com.au/Service/Csv?f=103+Generation%5CRegion+%2F+Plant+Total+Cleared+5min&from=', 
                                         year,'-10-01+00%3A00&period=Quarterly&instances=',state,'%3BGenerator&section=-1&key=CEPA21F')))[,-1]
-      Generators <- dplyr::bind_rows(df1,df2,df3,df4)
+      Generators <- bind_rows(df1,df2,df3,df4)
       rm(df1,df2,df3,df4)
       colnames(Generators) <- sapply(strsplit(colnames(Generators),"\\."),getElement,1)
-      Generators[is.na(Generators)] <- 0 
-      List <- as.data.frame(read.csv(paste0('https://www.neopoint.com.au/Service/Csv?f=107+Information%5CGenerators&from=',
-                                            year,'-01-01+00%3A00&period=Yearly&instances=&section=-1&key=CEPA21F')))
-      colnames(List)[1] <- "DUID"
-      List <- List[List$.REGIONID==state,c("DUID", ".REGIONID", ".CO2E_ENERGY_SOURCE")]
-      DUID = c("Date",colnames(Generators))
-      Generators$Hydro = rowSums(Generators[,DUID %in% List$DUID[List$.CO2E_ENERGY_SOURCE == "Hydro"]])
-      Generators$Solar = rowSums(Generators[,DUID %in% List$DUID[List$.CO2E_ENERGY_SOURCE == "Solar"]])
-      Generators$Wind = rowSums(Generators[,DUID %in% List$DUID[List$.CO2E_ENERGY_SOURCE == "Wind"]])
-      Generators$Hour <- rep(1:(nrow(Generators)/12),each=12)
-      Generators <- Generators %>% dplyr::group_by(Hour) %>% dplyr::summarise(
-        hydro_gen = mean(Hydro),
-        solar_gen = mean(Solar),
-        wind_gen = mean(Wind)
-      )
+      Generators[is.na(Generators)] <- 0
+      Generators$date_time <- seq(lubridate::ymd_h(paste0(year,"-1-1 0")), by = "hour", length.out = days*24)
+      Generators <- Generators %>% group_by(date_time) %>% summarise(across(tidyr::everything(),mean)) %>%
+        tidyr::pivot_longer(!date_time, names_to = "station", values_to = "output") %>% left_join(List, by=c("station"="DUID")) %>%
+        select(date_time,station,.CO2E_ENERGY_SOURCE,output) %>% rename("Tech"=".CO2E_ENERGY_SOURCE") %>%
+        ungroup() %>% group_by(date_time,Tech) %>% summarise(output = round(sum(output),3),.groups="keep") %>%
+        tidyr::spread(Tech,output)
       write.csv(Generators,file=paste0(wkdir,"/Generators_",state,"_",year,".csv"))
     }
     message("Updating INPUT DATA ZONAL workbook.")
@@ -67,9 +68,9 @@ BacktestingDemand <- function(wkdir, year = 2020, states = c("NSW1", "QLD1", "SA
     DATA <- readWorkbook(wb,sheet="DataEntry_1",skipEmptyCols = FALSE)
     n = nrow(DATA) - (nrow(Demand)+720) - 1
     DATA$Demand <- c(Demand$hourly_demand[1:720],Demand$hourly_demand,Demand$hourly_demand[(nrow(Demand)-n):nrow(Demand)])
-    DATA$Wind <- c(Generators$wind_gen[1:720],Generators$wind_gen,Generators$wind_gen[(nrow(Generators)-n):nrow(Generators)])
-    DATA$Solar <- c(Generators$solar_gen[1:720],Generators$solar_gen,Generators$solar_gen[(nrow(Generators)-n):nrow(Generators)])
-    DATA$Hydro <- c(Generators$hydro_gen[1:720],Generators$hydro_gen,Generators$hydro_gen[(nrow(Generators)-n):nrow(Generators)])
+    DATA$Wind <- c(Generators$Wind[1:720],Generators$Wind,Generators$Wind[(nrow(Generators)-n):nrow(Generators)])
+    DATA$Solar <- c(Generators$Solar[1:720],Generators$Solar,Generators$Solar[(nrow(Generators)-n):nrow(Generators)])
+    DATA$Hydro <- c(Generators$Hydro[1:720],Generators$Hydro,Generators$Hydro[(nrow(Generators)-n):nrow(Generators)])
     DATA$Residual.demand <- DATA$Demand - DATA$Wind - DATA$Solar - DATA$Hydro
     DATA$DEMAND <- DATA$Residual.demand
     
