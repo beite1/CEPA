@@ -73,7 +73,7 @@ BacktestingResults <- function(wkdir, rawdir,
   
   Exogenous_generation <- Exogenous_generation %>%
     filter(Time >= 721, Time <= (8760+720)) %>% #revisit, intended to extract middle 12 months
-    mutate(date_time = lubridate::ymd_h(paste0(year, "-1-1 0")) + hours(Time - 721)) %>%
+    mutate(date_time = lubridate::ymd_h(paste0(year, "-1-1 0")) + lubridate::hours(Time - 721)) %>%
     left_join(region_key, by = "REGION_KEY") %>%
     select(date_time, REGION, Demand, Wind, Solar, Hydro) %>%
     tidyr::pivot_longer(-c(date_time, REGION), names_to = "FUEL_TYPE_TEXT", values_to = "output")
