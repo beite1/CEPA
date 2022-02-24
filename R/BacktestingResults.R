@@ -33,7 +33,7 @@ BacktestingResults <- function(wkdir, rawdir,
     mutate(ext = stringr::str_extract(value,"[^.]+$"),start=stringr::str_extract(value,"^[^_]+(?=_)")) %>%
     filter(ext=="xlsx",start=="INPUT") %>% select(value) %>% arrange()
   
-  meta_data <- readxl::read_excel(paste0(wkdir,'/',input_files$value[1]), sheet = "DATA", cell_cols("A:AP")) %>%
+  meta_data <- readxl::read_excel(paste0(wkdir,'/',input_files$value[1]), sheet = "DATA", cellranger::cell_cols("A:AP")) %>%
     select(STATION, DUID, REGION, REGION_KEY, CAPACITY, FUEL_TYPE_TEXT,
            INITIAL_ENERGY_STOCK_IN_DAMS, HYDRO_DAM_CAPACITY, VARCOST) %>%
     rename("unit" = DUID)
