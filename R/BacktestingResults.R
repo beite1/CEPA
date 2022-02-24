@@ -66,15 +66,15 @@ BacktestingResults <- function(wkdir, rawdir,
   
   ## Convert the horizon output from model to date_time 
   Electricity_dispatch <- Electricity_dispatch %>%
-    tidyr::inner_join(time_mapping, by = c(...1 = "horizon", ...2 = "period")) %>%
+    inner_join(time_mapping, by = c(...1 = "horizon", ...2 = "period")) %>%
     select(-c(1:2)) %>%
     tidyr::pivot_longer(-date_time, names_to = "unit", values_to = "output") %>%
-    tidyr::left_join(meta_data, by = "unit")
+    left_join(meta_data, by = "unit")
   
   Exogenous_generation <- Exogenous_generation %>%
     filter(Time >= 721, Time <= (8760+720)) %>% #revisit, intended to extract middle 12 months
     mutate(date_time = lubridate::ymd_h(paste0(year, "-1-1 0")) + hours(Time - 721)) %>%
-    tidyr::left_join(region_key, by = "REGION_KEY") %>%
+    left_join(region_key, by = "REGION_KEY") %>%
     select(date_time, REGION, Demand, Wind, Solar, Hydro) %>%
     tidyr::pivot_longer(-c(date_time, REGION), names_to = "FUEL_TYPE_TEXT", values_to = "output")
   
@@ -89,20 +89,20 @@ BacktestingResults <- function(wkdir, rawdir,
     tidyr::pivot_longer(-date_time, names_to = "unit", values_to = "discharge")
   
   Charge_Discharge <- Charge_Units %>% 
-    tidyr::left_join(Discharge_Units, by = c("date_time", "unit"))  %>%
+    left_join(Discharge_Units, by = c("date_time", "unit"))  %>%
     filter(charge > 0.0001 | discharge > 0.0001) %>%
     mutate(across(c(charge, discharge), ~round(., digits = 3)),
            output = discharge - charge) %>%
-    tidyr::left_join(meta_data, by = "unit")
+    left_join(meta_data, by = "unit")
   
   rm(Charge_Units, Discharge_Units)
   
   SystemMarginalPrice <- SystemMarginalPrice %>%
-    tidyr::inner_join(time_mapping, by = c(...1 = "horizon", ...2 = "period")) %>%
+    inner_join(time_mapping, by = c(...1 = "horizon", ...2 = "period")) %>%
     select(-c(1:2)) %>%
     tidyr::pivot_longer(-date_time, names_to = "region", values_to = "spot_price") %>%
     mutate(region = as.numeric(region)) %>%
-    tidyr::left_join(region_key, by = c("region" = "REGION_KEY")) %>%
+    left_join(region_key, by = c("region" = "REGION_KEY")) %>%
     filter(!is.na(REGION))
   
   ############################## Price Variables ###########################################
@@ -122,8 +122,8 @@ BacktestingResults <- function(wkdir, rawdir,
   cols <- IC_Flows_Hourly[1:2,-1:-2] %>%
     t() %>%
     tibble::as_tibble() %>%
-    tidyr::left_join(nodes, by = c("V1" = "node")) %>%
-    tidyr::left_join(nodes, by = c("V2" = "node")) %>%
+    left_join(nodes, by = c("V1" = "node")) %>%
+    left_join(nodes, by = c("V2" = "node")) %>%
     mutate(link = paste0(V1, "_", V2),
            link_name = paste0(name.x, "_", name.y)) %>%
     pull(link_name)
@@ -133,7 +133,7 @@ BacktestingResults <- function(wkdir, rawdir,
   #Add time stamp and manipulate
   suppressWarnings(IC_Flows_Hourly <- IC_Flows_Hourly %>%
     mutate(across(everything(), ~replace(., is.na(.), 0))) %>%
-    tidyr::inner_join(time_mapping, by = c("horizon", "period")) %>%
+    inner_join(time_mapping, by = c("horizon", "period")) %>%
     select(-c(1:2)) %>%
     tidyr::pivot_longer(-date_time, names_to = "link", values_to = "flow") %>%
     mutate(from_virtual = sub("_.*", "", link), #from (all nodes)
@@ -159,8 +159,8 @@ BacktestingResults <- function(wkdir, rawdir,
   )
   #Add regional prices
   DATA <- IC_Flows_Hourly %>%
-    tidyr::left_join(SystemMarginalPrice, by = c("date_time", "from" = "REGION")) %>%
-    tidyr::left_join(SystemMarginalPrice, by = c("date_time", "to" = "REGION")) %>%
+    left_join(SystemMarginalPrice, by = c("date_time", "from" = "REGION")) %>%
+    left_join(SystemMarginalPrice, by = c("date_time", "to" = "REGION")) %>%
     rename(price_from = spot_price.x, price_to = spot_price.y) %>%
     select(-region.x, -region.y)
   
@@ -189,7 +189,7 @@ BacktestingResults <- function(wkdir, rawdir,
     group_by(date_time, to) %>% summarise(In = sum(flow),.groups="keep") %>% rename("REGION" = "to")
   FlowOut <- DATA %>% filter(to_virtual %notin% c("QNI", "ML", "M1", "M2")) %>%
     group_by(date_time, from) %>% summarise(Out = sum(flow),.groups="keep") %>% rename("REGION" = "from")
-  FlowInOut <- tidyr::full_join(FlowIn,FlowOut,by = c("date_time", "REGION")) %>% mutate(Net = In - Out)
+  FlowInOut <- full_join(FlowIn,FlowOut,by = c("date_time", "REGION")) %>% mutate(Net = In - Out)
   
   rm(FlowIn,FlowOut)
   
@@ -231,7 +231,7 @@ BacktestingResults <- function(wkdir, rawdir,
   DATA <- Electricity_dispatch %>% group_by(date_time,REGION,FUEL_TYPE_TEXT) %>%
     summarise(output = sum(output),.groups = "drop") %>% bind_rows(Exogenous_generation) %>%
     arrange(date_time,REGION,FUEL_TYPE_TEXT) %>% tidyr::spread(FUEL_TYPE_TEXT,output) %>%
-    tidyr::full_join(FlowInOut, by = c("date_time", "REGION")) %>% select(-In,-Out) %>%
+    full_join(FlowInOut, by = c("date_time", "REGION")) %>% select(-In,-Out) %>%
     rename("Imports" = "Net") %>% mutate(across(!date_time, ~replace(., is.na(.), 0))) %>%
     mutate(across(!c(date_time,REGION), ~ifelse(abs(.) < 0.0001, 0, .))) %>%
     mutate(across(!c(date_time,REGION), ~round(.,3)))
@@ -255,7 +255,7 @@ BacktestingResults <- function(wkdir, rawdir,
   if(days==366) {weights <- weights[-(1393:1416),]}
   
   LW_AvPrice <- purrr::map2_dfc(price.list$DATA[c(2:6)],weights[,c(2:6)],~weighted.mean(.x,.y))
-  Daily_AvPrice <- price.list$DATA %>% tidyr::full_join(weights, by = "date_time") %>% 
+  Daily_AvPrice <- price.list$DATA %>% full_join(weights, by = "date_time") %>% 
     mutate(across("date_time",~strftime(., format = "%D", tz="GMT"))) %>%
     group_by(date_time) %>% summarise(
       NSW = NSW %*% NSW_W / sum(NSW_W),
@@ -265,7 +265,7 @@ BacktestingResults <- function(wkdir, rawdir,
       VIC = VIC %*% VIC_W / sum(VIC_W),
       .groups="drop")
   
-  Monthly_AvPrice <- price.list$DATA %>% tidyr::full_join(weights, by = "date_time") %>% 
+  Monthly_AvPrice <- price.list$DATA %>% full_join(weights, by = "date_time") %>% 
     mutate(across("date_time",~strftime(., format = "%m", tz="GMT"))) %>%
     group_by(date_time) %>% summarise(
       NSW = NSW %*% NSW_W / sum(NSW_W),
@@ -311,7 +311,7 @@ BacktestingResults <- function(wkdir, rawdir,
       GenData[is.na(GenData)] <- 0
       GenData$date_time <- rep(seq(lubridate::ymd_h(paste0(year, "-1-1 0")), by = "hour", length.out = days*24),each=12)
       GenData <- GenData %>% group_by(date_time) %>% summarise(across(everything(),mean)) %>% 
-        pivot_longer(!date_time, names_to = "station", values_to = "output") %>% tidyr::left_join(List,by = c("station"="DUID")) %>%
+        pivot_longer(!date_time, names_to = "station", values_to = "output") %>% left_join(List,by = c("station"="DUID")) %>%
         select(date_time,station,.CO2E_ENERGY_SOURCE,output) %>% rename("Tech"=".CO2E_ENERGY_SOURCE") %>% ungroup() %>%
         group_by(date_time,Tech) %>% summarise(output = round(sum(output),3),.groups = "keep") %>% tidyr::spread(Tech,output)
       GenData$REGION <- stringr::str_remove(state,"1")
@@ -360,8 +360,8 @@ BacktestingResults <- function(wkdir, rawdir,
   ############################## Actual Interconnector/Flow Variables #############################
 
   DATA <- ICFlow %>%
-    tidyr::left_join(pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "from" = "region")) %>%
-    tidyr::left_join(pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "to" = "region")) %>%
+    left_join(pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "from" = "region")) %>%
+    left_join(pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "to" = "region")) %>%
     rename(price_from = spot_price.x, price_to = spot_price.y)
   
   #Determine annual flows between regions (Only net)
@@ -388,7 +388,7 @@ BacktestingResults <- function(wkdir, rawdir,
     group_by(date_time, to) %>% summarise(In = sum(flow),.groups="keep") %>% rename("REGION" = "to")
   FlowOut <- DATA %>%
     group_by(date_time, from) %>% summarise(Out = sum(flow),.groups="keep") %>% rename("REGION" = "from")
-  FlowInOut <- tidyr::full_join(FlowIn,FlowOut,by = c("date_time", "REGION")) %>% replace_na(list(In = 0, Out = 0)) %>% 
+  FlowInOut <- full_join(FlowIn,FlowOut,by = c("date_time", "REGION")) %>% replace_na(list(In = 0, Out = 0)) %>% 
     mutate(Net = In - Out) %>% select(-In,-Out)
   
   rm(FlowIn,FlowOut)
@@ -414,7 +414,7 @@ BacktestingResults <- function(wkdir, rawdir,
   
   ########################### Generation x Dispatch variables ##############################################
   
-  DATA <- Generators %>% tidyr::full_join(FlowInOut, by = c("date_time", "REGION")) %>%
+  DATA <- Generators %>% full_join(FlowInOut, by = c("date_time", "REGION")) %>%
     rename("Imports" = "Net") %>% mutate(across(everything(), ~replace(., is.na(.), 0))) %>%
     mutate(across(!c(REGION,date_time), ~ifelse(abs(.) < 0.0001, 0, .))) %>%
     mutate(across(!c(REGION,date_time), ~round(.,3))) %>% select(-V1)
@@ -436,7 +436,7 @@ BacktestingResults <- function(wkdir, rawdir,
     select(date_time,REGION,weight) %>% tidyr::spread(REGION,weight) %>% rename_with(~paste0(.,"_W"),.cols=!date_time)
   
   LW_AvPrice <- purrr::map2_dfc(price.list$DATA[c(2:6)],weights[,c(2:6)],~weighted.mean(.x,.y))
-  Daily_AvPrice <- price.list$DATA %>% tidyr::full_join(weights, by = "date_time") %>% 
+  Daily_AvPrice <- price.list$DATA %>% full_join(weights, by = "date_time") %>% 
     mutate(across("date_time",~strftime(., format = "%D", tz="GMT"))) %>%
     group_by(date_time) %>% summarise(
       NSW = NSW %*% NSW_W / sum(NSW_W),
@@ -446,7 +446,7 @@ BacktestingResults <- function(wkdir, rawdir,
       VIC = VIC %*% VIC_W / sum(VIC_W),
       .groups="drop")
   
-  Monthly_AvPrice <- price.list$DATA %>% tidyr::full_join(weights, by = "date_time") %>% 
+  Monthly_AvPrice <- price.list$DATA %>% full_join(weights, by = "date_time") %>% 
     mutate(across("date_time",~strftime(., format = "%m", tz="GMT"))) %>%
     group_by(date_time) %>% summarise(
       NSW = NSW %*% NSW_W / sum(NSW_W),
