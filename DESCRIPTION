@@ -10,4 +10,4 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 
-Imports: purrr, data.table, openxlsx, tidyr, dplyr, magrittr, readxl, lubridate
+Imports: purrr, data.table, openxlsx, tidyr, dplyr, magrittr, readxl, lubridate, tibble, forcats

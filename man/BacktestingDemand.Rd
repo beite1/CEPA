@@ -5,12 +5,12 @@
 This function will generate the INPUT_DATA_ZONAL files by downloading the data from Neopoints (if it has not already been downloaded). You will be prompted to enter where the raw data is saved on your local device.
 }
 \usage{
-BacktestingDemand()
+BacktestingDemand(wkdir, year)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{wkdir}{Enter the location for the 'Demand' and 'Generation' files.}
-  \item{year}{ Default = 2020. Set the year you want to backtest.
+  \item{year}{Default = 2020. Set the year you want to backtest.
   
 }
 }
