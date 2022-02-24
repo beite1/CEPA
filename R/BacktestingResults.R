@@ -30,7 +30,7 @@ BacktestingResults <- function(wkdir, rawdir,
   
   ## Get files from the working directory set in the function.
   input_files <- list.files(wkdir) %>% tibble::as_tibble() %>%
-    mutate(ext = stringr::str_extract(value,"[^.]+$"),start=str_extract(value,"^[^_]+(?=_)")) %>%
+    mutate(ext = stringr::str_extract(value,"[^.]+$"),start=stringr::str_extract(value,"^[^_]+(?=_)")) %>%
     filter(ext=="xlsx",start=="INPUT") %>% select(value) %>% arrange()
   
   meta_data <- readxl::read_excel(paste0(wkdir,'/',input_files$value[1]), sheet = "DATA", cell_cols("A:AP")) %>%
