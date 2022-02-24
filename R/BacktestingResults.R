@@ -121,7 +121,7 @@ BacktestingResults <- function(wkdir, rawdir,
   #Extract first two rows to create column names
   cols <- IC_Flows_Hourly[1:2,-1:-2] %>%
     t() %>%
-    tibble::as_tibble(.name_repair = "minimal") %>%
+    tibble::as_tibble(.name_repair = "check_unique") %>%
     left_join(nodes, by = c("V1" = "node")) %>%
     left_join(nodes, by = c("V2" = "node")) %>%
     mutate(link = paste0(V1, "_", V2),
