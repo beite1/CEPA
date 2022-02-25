@@ -121,9 +121,9 @@ BacktestingResults <- function(wkdir, rawdir,
   #Extract first two rows to create column names
   cols <- IC_Flows_Hourly[1:2,-1:-2] %>%
     t() %>%
-    tibble::as_tibble(.name_repair = "universal") %>%
-    left_join(nodes, by = c("...1" = "node")) %>%
-    left_join(nodes, by = c("...2" = "node")) %>%
+    tibble::as_tibble(.name_repair = "universal") %>% rename(V1 = ...1, V2 = ...2) %>%
+    left_join(nodes, by = c("V1" = "node")) %>%
+    left_join(nodes, by = c("V2" = "node")) %>%
     mutate(link = paste0(V1, "_", V2),
            link_name = paste0(name.x, "_", name.y)) %>%
     pull(link_name)
