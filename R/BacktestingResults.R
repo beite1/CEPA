@@ -311,7 +311,7 @@ BacktestingResults <- function(wkdir, rawdir,
       GenData[is.na(GenData)] <- 0
       GenData$date_time <- rep(seq(lubridate::ymd_h(paste0(year, "-1-1 0")), by = "hour", length.out = days*24),each=12)
       GenData <- GenData %>% group_by(date_time) %>% summarise(across(everything(),mean)) %>% 
-        pivot_longer(!date_time, names_to = "station", values_to = "output") %>% left_join(List,by = c("station"="DUID")) %>%
+        tidyr::pivot_longer(!date_time, names_to = "station", values_to = "output") %>% left_join(List,by = c("station"="DUID")) %>%
         select(date_time,station,.CO2E_ENERGY_SOURCE,output) %>% rename("Tech"=".CO2E_ENERGY_SOURCE") %>% ungroup() %>%
         group_by(date_time,Tech) %>% summarise(output = round(sum(output),3),.groups = "keep") %>% tidyr::spread(Tech,output)
       GenData$REGION <- stringr::str_remove(state,"1")
@@ -339,7 +339,7 @@ BacktestingResults <- function(wkdir, rawdir,
     colnames(ICFlow) = c("NSW_QLD", "NSW_QLD1", "TAS_VIC", "VIC_SA", "VIC_SA1", "VIC_NSW")                                          
     ICFlow$date_time <- rep(seq(lubridate::ymd_h(paste0(year, "-1-1 0")), by = "hour", length.out = days*24),each=12)
     ICFlow <- ICFlow %>% group_by(date_time) %>% summarise(across(everything(),mean)) %>%
-      pivot_longer(!date_time,names_to = "from_to", values_to = "flow")  %>%
+      tidyr::pivot_longer(!date_time,names_to = "from_to", values_to = "flow")  %>%
       mutate(from_to = stringr::str_remove(from_to,"1"),
         from = sub("_.*", "", from_to),
         to = sub(".*_", "", from_to))
@@ -360,8 +360,8 @@ BacktestingResults <- function(wkdir, rawdir,
   ############################## Actual Interconnector/Flow Variables #############################
 
   DATA <- ICFlow %>%
-    left_join(pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "from" = "region")) %>%
-    left_join(pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "to" = "region")) %>%
+    left_join(tidyr::pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "from" = "region")) %>%
+    left_join(tidyr::pivot_longer(Prices,!date_time,names_to = "region",values_to = "spot_price"), by = c("date_time", "to" = "region")) %>%
     rename(price_from = spot_price.x, price_to = spot_price.y)
   
   #Determine annual flows between regions (Only net)
