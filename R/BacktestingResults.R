@@ -388,7 +388,7 @@ BacktestingResults <- function(wkdir, rawdir,
     group_by(date_time, to) %>% summarise(In = sum(flow),.groups="keep") %>% rename("REGION" = "to")
   FlowOut <- DATA %>%
     group_by(date_time, from) %>% summarise(Out = sum(flow),.groups="keep") %>% rename("REGION" = "from")
-  FlowInOut <- full_join(FlowIn,FlowOut,by = c("date_time", "REGION")) %>% replace_na(list(In = 0, Out = 0)) %>% 
+  FlowInOut <- full_join(FlowIn,FlowOut,by = c("date_time", "REGION")) %>% tidyr::replace_na(list(In = 0, Out = 0)) %>% 
     mutate(Net = In - Out) %>% select(-In,-Out)
   
   rm(FlowIn,FlowOut)
